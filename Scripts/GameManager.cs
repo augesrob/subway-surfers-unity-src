@@ -78,6 +78,7 @@ public class GameManager : MonoBehaviour
     }
     public void PlaySound(int index)
     {
+        if (_audioSource == null || _sounds == null || index < 0 || index >= _sounds.Length || _sounds[index] == null) return;
         _audioSource.PlayOneShot(_sounds[index]);
     }
     private IEnumerator LifeRegen()

@@ -94,7 +94,7 @@ public class PlayerController : MonoBehaviour
     }
     private void Start()
     {
-        _animator.SetBool(_animBoolIsGrounded, true);
+        if (_animator != null) _animator.SetBool(_animBoolIsGrounded, true);
     }
 
     private void OnDisable()
@@ -117,13 +117,12 @@ public class PlayerController : MonoBehaviour
         if (_currentDirection != Direction.Left)
         {
             _currentDirection = Direction.Left;
-            if(_forceReceiver.IsInAir)
+            if (_animator != null)
             {
-                _animator.CrossFadeInFixedTime(_animInAirDodgeLeftHash, _animationFadeTime + 0.15f);
-            }
-            else
-            {
-                _animator.CrossFadeInFixedTime(_animDodgeLeftHash, _animationFadeTime);
+                if(_forceReceiver.IsInAir)
+                    _animator.CrossFadeInFixedTime(_animInAirDodgeLeftHash, _animationFadeTime + 0.15f);
+                else
+                    _animator.CrossFadeInFixedTime(_animDodgeLeftHash, _animationFadeTime);
             }
         }
 
@@ -147,14 +146,12 @@ public class PlayerController : MonoBehaviour
         if (_currentDirection != Direction.Right)
         {
             _currentDirection = Direction.Right;
-
-            if (_forceReceiver.IsInAir)
+            if (_animator != null)
             {
-                _animator.CrossFadeInFixedTime(_animInAirDodgeRightHash, _animationFadeTime + 0.05f);
-            }
-            else
-            {
-                _animator.CrossFadeInFixedTime(_animDodgeRightHash, _animationFadeTime);
+                if (_forceReceiver.IsInAir)
+                    _animator.CrossFadeInFixedTime(_animInAirDodgeRightHash, _animationFadeTime + 0.05f);
+                else
+                    _animator.CrossFadeInFixedTime(_animDodgeRightHash, _animationFadeTime);
             }
         }
 
@@ -173,12 +170,12 @@ public class PlayerController : MonoBehaviour
     }
     private void HandleOnRollEvent()
     {
-        if(_isRolling) 
+        if(_isRolling)
             return;
         if (_forceReceiver.IsInAir)
             _forceReceiver.airRoll = true;
         GameManager.Instance.PlaySound(2);
-        _animator.CrossFadeInFixedTime(_animRollHash, _animationFadeTime);
+        if (_animator != null) _animator.CrossFadeInFixedTime(_animRollHash, _animationFadeTime);
         _characterController.center = _colliderCenterOnRoll;
         _characterController.height /= 2f;
         StartCoroutine(RollCooldown());
@@ -188,24 +185,27 @@ public class PlayerController : MonoBehaviour
         if (!_forceReceiver.IsGrounded) return;
         GameManager.Instance.PlaySound(1);
         _forceReceiver.Jump(_jumpForce);
-        _animator.SetBool(_animBoolIsGrounded, false);
-        _animator.CrossFadeInFixedTime(_animJumpHash, _animationFadeTime);
+        if (_animator != null)
+        {
+            _animator.SetBool(_animBoolIsGrounded, false);
+            _animator.CrossFadeInFixedTime(_animJumpHash, _animationFadeTime);
+        }
     }
     private void HandleOnLanded()
     {
-        _animator.SetBool(_animBoolIsGrounded, true);
+        if (_animator != null) _animator.SetBool(_animBoolIsGrounded, true);
     }
     private void HandleOnGrounded(float heighty)
     {
-        _animator.SetBool(_animBoolIsGrounded, true);
+        if (_animator != null) _animator.SetBool(_animBoolIsGrounded, true);
     }
     private void HandleOnFall()
     {
-        _animator.SetBool(_animBoolIsGrounded, false);
+        if (_animator != null) _animator.SetBool(_animBoolIsGrounded, false);
     }
     private void HandleOnRunSpeedChange(float speed)
     {
-        _animator.SetFloat(_animRunHash, speed);
+        if (_animator != null) _animator.SetFloat(_animRunHash, speed);
     }
     private void HandleBumping()
     {
@@ -238,11 +238,11 @@ public class PlayerController : MonoBehaviour
     }
     private void HandleOnGameEnd()
     {
-        _animator.CrossFadeInFixedTime(_animCaughtHash, _animationFadeTime);
+        if (_animator != null) _animator.CrossFadeInFixedTime(_animCaughtHash, _animationFadeTime);
     }
     private void HandleOnCrash()
     {
-        _animator.CrossFadeInFixedTime(_animDeadHash, _animationFadeTime);
+        if (_animator != null) _animator.CrossFadeInFixedTime(_animDeadHash, _animationFadeTime);
     }
     private void HandleOnIntroStarted()
     {
@@ -251,7 +251,7 @@ public class PlayerController : MonoBehaviour
     private IEnumerator GetReady(float speed)
     {
         yield return new WaitForSeconds(0.4f);
-        _animator.CrossFadeInFixedTime(_animIntroRunHash, _animationFadeTime);
+        if (_animator != null) _animator.CrossFadeInFixedTime(_animIntroRunHash, _animationFadeTime);
         float howFar = 0f;
         do
         {

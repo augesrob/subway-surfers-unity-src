@@ -38,14 +38,14 @@ public class PowerupManager : MonoBehaviour
     // ────────────────────────────────────────────────────────────
     private void Awake()
     {
-        if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); }
+        if (Instance == null) { Instance = this; }
         else { Destroy(gameObject); return; }
     }
 
     private void Start()
     {
         // Grab ForceReceiver from the player
-        var player = FindObjectOfType<PlayerController>();
+        var player = FindAnyObjectByType<PlayerController>();
         if (player != null)
             _forceReceiver = player.GetComponent<ForceReceiver>();
     }

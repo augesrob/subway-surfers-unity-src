@@ -63,7 +63,7 @@ public static class SubwaySurfersSceneBuilder
         // ------------------------------------------------------------------
         // 3. Directional Light (if none exists)
         // ------------------------------------------------------------------
-        if (Object.FindFirstObjectByType<Light>() == null)
+        if (Object.FindAnyObjectByType<Light>() == null)
         {
             var lightGO = new GameObject("Directional Light");
             Undo.RegisterCreatedObjectUndo(lightGO, "Create Light");
@@ -86,6 +86,20 @@ public static class SubwaySurfersSceneBuilder
         // -- ScoreManager (will be wired to UI later) --
         var smGO = CreateChild("ScoreManager", managersRoot);
         var sm   = smGO.AddComponent<ScoreManager>();
+
+        // -- WorldCurveManager (the curved-world Subway Surfers effect) --
+        var wcmGO = CreateChild("WorldCurveManager", managersRoot);
+        var wcm   = wcmGO.AddComponent<WorldCurveManager>();
+        // Assign all curved materials so the bend effect applies to ground + rails
+        var curvedMats = new System.Collections.Generic.List<Material>();
+        foreach (var path in new[] {
+            "Assets/ShaderMats/curvedPlane.mat",
+            "Assets/ShaderMats/curvedRailRoad.mat" })
+        {
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (m != null) curvedMats.Add(m);
+        }
+        SetPrivateField(wcm, "_curvedMaterials", curvedMats.ToArray());
 
         // -- PowerupManager (must be named exactly "PowerupManager") --
         var pmGO = new GameObject("PowerupManager");
@@ -162,7 +176,7 @@ public static class SubwaySurfersSceneBuilder
         startGround.transform.position = new Vector3(0, 0, 20f);
         startGround.transform.localScale = new Vector3(1.5f, 1f, 12f); // 15m wide × 120m long
         startGround.layer = groundLayer;
-        SetColor(startGround, new Color(0.3f, 0.3f, 0.35f));
+        SetColor(startGround, new Color(0.3f, 0.3f, 0.35f), "Assets/ShaderMats/curvedPlane.mat");
 
         // Remove mesh collider on body (doesn't need it — ground check uses Physics.CheckSphere)
         // But startGround DOES need its collider → leave it.
@@ -333,7 +347,7 @@ public static class SubwaySurfersSceneBuilder
         ground.transform.localPosition = new Vector3(0, 0, CHUNK_LENGTH * 0.5f);
         ground.transform.localScale    = new Vector3(1.5f, 1f, CHUNK_LENGTH * 0.1f);
         ground.layer = groundLayer;
-        SetColor(ground, new Color(0.3f, 0.3f, 0.35f));
+        SetColor(ground, new Color(0.3f, 0.3f, 0.35f), "Assets/ShaderMats/curvedPlane.mat");
 
         // 3 lane rails (visual)
         for (int i = -1; i <= 1; i++)
@@ -343,7 +357,7 @@ public static class SubwaySurfersSceneBuilder
             rail.transform.SetParent(chunkRoot.transform);
             rail.transform.localPosition = new Vector3(i * LANE_WIDTH, 0.05f, CHUNK_LENGTH * 0.5f);
             rail.transform.localScale    = new Vector3(0.2f, 0.1f, CHUNK_LENGTH);
-            SetColor(rail, new Color(0.5f, 0.45f, 0.4f));
+            SetColor(rail, new Color(0.5f, 0.45f, 0.4f), "Assets/ShaderMats/curvedRailRoad.mat");
             DestroyCollider(rail);
         }
 
@@ -418,10 +432,15 @@ public static class SubwaySurfersSceneBuilder
         return tmp;
     }
 
-    private static void SetColor(GameObject go, Color color)
+    private static void SetColor(GameObject go, Color color, string curvedMatPath = null)
     {
         var renderer = go.GetComponent<Renderer>();
         if (renderer == null) return;
+        if (!string.IsNullOrEmpty(curvedMatPath))
+        {
+            var curved = AssetDatabase.LoadAssetAtPath<Material>(curvedMatPath);
+            if (curved != null) { renderer.sharedMaterial = curved; return; }
+        }
         var mat = new Material(Shader.Find("Universal Render Pipeline/Lit") ??
                                Shader.Find("Standard"));
         mat.color = color;

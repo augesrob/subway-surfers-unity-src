@@ -23,6 +23,7 @@ public class EnemyController : MonoBehaviour
         _transform = GetComponent<Transform>();
         _startLocalPos = _transform.localPosition;
         _audioSource = GetComponent<AudioSource>();
+        if (_audioSource == null) _audioSource = gameObject.AddComponent<AudioSource>();
         _audioSource.Stop();
     }
     private void OnEnable()
