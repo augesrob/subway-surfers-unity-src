@@ -1,0 +1,77 @@
+name: Build WebGL
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build WebGL for SubwaySurfersLive
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      # ── 2. Cache Unity Library ───────────────────────────────────
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-WebGL-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-WebGL-
+            Library-
+
+      # ── 3. Build ─────────────────────────────────────────────────
+      - name: Build Unity WebGL
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE:     ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL:       ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD:    ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform:    WebGL
+          unityVersion:      6000.4.7f1
+          buildName:         SubwaySurfers
+          buildsPath:        build
+          # Disable compression so the Electron app can load files without a web server
+          customParameters:  -Development false
+
+      # ── 4. Upload artifact (every build) ─────────────────────────
+      - name: Upload WebGL build
+        uses: actions/upload-artifact@v4
+        with:
+          name: SubwaySurfers-WebGL
+          path: build/WebGL/SubwaySurfers/**
+          if-no-files-found: error
+
+      # ── 5. Release (tags only) ───────────────────────────────────
+      - name: Zip WebGL build
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd build/WebGL
+          zip -r SubwaySurfers-WebGL.zip SubwaySurfers/
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "SubwaySurfers WebGL ${{ github.ref_name }}"
+          body: |
+            Unity WebGL build — drop the **SubwaySurfers-WebGL** folder into
+            `SubwaySurfersLive/game/` and update `unityWebglBuildUrl` in
+            `game/index.html` to point to `Build/SubwaySurfers.json`.
+          files: build/WebGL/SubwaySurfers-WebGL.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
